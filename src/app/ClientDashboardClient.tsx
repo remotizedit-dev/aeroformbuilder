@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Form, FormField } from "@/lib/formService";
-import { logoutClient, updateReceiverEmails, ClientSession, getClientLeads, deleteClientLead } from "@/app/actions/clientAuth";
+import { Form, FormField, FormFieldType } from "@/lib/formService";
+import { logoutClient, updateReceiverEmails, ClientSession, getClientLeads, deleteClientLead, updateClientFormFields } from "@/app/actions/clientAuth";
 import { useRouter } from "next/navigation";
-import { LogOut, Download, Search, Eye, Trash2, X, Code, Copy, Mail, ShieldAlert, Check, ExternalLink, Settings, Loader2 } from "lucide-react";
+import { LogOut, Download, Search, Eye, Trash2, X, Code, Copy, Mail, ShieldAlert, Check, ExternalLink, Settings, Loader2, Plus, ArrowUp, ArrowDown, Edit3 } from "lucide-react";
 
 interface ClientDashboardClientProps {
   session: ClientSession;
@@ -30,10 +30,16 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
   const [emailUpdateSuccess, setEmailUpdateSuccess] = useState(false);
 
   // Tab State
-  const [activeMenuTab, setActiveMenuTab] = useState<"leads" | "settings" | "embed">("leads");
+  const [activeMenuTab, setActiveMenuTab] = useState<"leads" | "settings" | "embed" | "form">("leads");
   
   // Integration Tab State
   const [activeCodeTab, setActiveCodeTab] = useState<"iframe" | "html" | "react" | "php">("iframe");
+
+  // Form Builder State
+  const [editingFormName, setEditingFormName] = useState("");
+  const [editingFields, setEditingFields] = useState<FormField[]>([]);
+  const [savingForm, setSavingForm] = useState(false);
+  const [formUpdateSuccess, setFormUpdateSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const selectedForm = forms.find(f => f.id === selectedFormId);
@@ -61,6 +67,9 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
 
     if (selectedForm) {
       setReceiverEmails(selectedForm.emailSettings?.receiverEmails || "");
+      setEditingFormName(selectedForm.name);
+      setEditingFields(JSON.parse(JSON.stringify(selectedForm.fields || [])));
+      setFormUpdateSuccess(false);
     }
   }, [selectedFormId, selectedForm]);
 
@@ -110,6 +119,88 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
       alert("An unexpected error occurred.");
     } finally {
       setUpdatingEmails(false);
+    }
+  };
+
+  // Form Builder Handlers
+  const handleAddField = () => {
+    const nextId = `f_${Date.now()}`;
+    const nextOrder = editingFields.length > 0 ? Math.max(...editingFields.map(f => f.order)) + 1 : 1;
+    setEditingFields([
+      ...editingFields,
+      {
+        id: nextId,
+        name: `field_${nextId}`,
+        label: "New Field",
+        type: "text",
+        required: false,
+        order: nextOrder
+      }
+    ]);
+  };
+
+  const handleRemoveField = (fieldId: string) => {
+    setEditingFields(editingFields.filter(f => f.id !== fieldId));
+  };
+
+  const handleFieldChange = (fieldId: string, updates: Partial<FormField>) => {
+    setEditingFields(editingFields.map(f => {
+      if (f.id === fieldId) {
+        const updated = { ...f, ...updates };
+        if (updates.label !== undefined) {
+          updated.name = updates.label
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "")
+            .trim();
+          if (!updated.name) updated.name = `field_${fieldId}`;
+        }
+        return updated;
+      }
+      return f;
+    }));
+  };
+
+  const moveField = (index: number, direction: "up" | "down") => {
+    const fields = [...editingFields];
+    if (direction === "up" && index > 0) {
+      const temp = fields[index];
+      fields[index] = fields[index - 1];
+      fields[index - 1] = temp;
+    } else if (direction === "down" && index < fields.length - 1) {
+      const temp = fields[index];
+      fields[index] = fields[index + 1];
+      fields[index + 1] = temp;
+    }
+    const reordered = fields.map((f, i) => ({ ...f, order: i + 1 }));
+    setEditingFields(reordered);
+  };
+
+  const handleSaveFormFields = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingFormName.trim()) return alert("Form Name is required");
+    if (editingFields.length === 0) return alert("At least one form field is required");
+
+    setSavingForm(true);
+    setFormUpdateSuccess(false);
+
+    try {
+      const res = await updateClientFormFields(selectedFormId, editingFormName, editingFields);
+      if (res.success) {
+        setFormUpdateSuccess(true);
+        // Update local forms array so UI updates
+        const formIndex = forms.findIndex(f => f.id === selectedFormId);
+        if (formIndex > -1) {
+          forms[formIndex].name = editingFormName;
+          forms[formIndex].fields = editingFields;
+        }
+      } else {
+        alert(res.error || "Failed to update form layout.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An unexpected error occurred.");
+    } finally {
+      setSavingForm(false);
     }
   };
 
@@ -300,6 +391,22 @@ ${selectedForm.fields.map(f => `  <div style="margin-bottom: 12px;">
                 }}
               >
                 Integrations
+              </button>
+              <button
+                onClick={() => setActiveMenuTab("form")}
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  background: "none",
+                  border: "none",
+                  fontWeight: 600,
+                  fontSize: "1rem",
+                  cursor: "pointer",
+                  color: activeMenuTab === "form" ? "var(--primary)" : "var(--text-secondary)",
+                  borderBottom: activeMenuTab === "form" ? "2px solid var(--primary)" : "none",
+                  marginBottom: "-2px"
+                }}
+              >
+                Form Builder
               </button>
             </div>
 
@@ -533,6 +640,154 @@ ${selectedForm.fields.map(f => `  <div style="margin-bottom: 12px;">
                   <ExternalLink size={16} />
                   <span>Public Render Link: <a href={`/f/${selectedForm.id}`} target="_blank" rel="noreferrer" style={{ textDecoration: "underline", color: "inherit", fontWeight: "bold" }}>/f/{selectedForm.id}</a></span>
                 </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT: FORM BUILDER */}
+            {activeMenuTab === "form" && (
+              <div className="card animate-fade-in" style={{ padding: "2rem" }}>
+                <h3 style={{ marginBottom: "0.5rem", color: "var(--primary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <Edit3 size={22} /> Form Layout Builder
+                </h3>
+                <p style={{ marginBottom: "2rem", color: "var(--text-secondary)" }}>
+                  Customize your form fields and title. Changes will instantly update your live embedded forms.
+                </p>
+
+                <form onSubmit={handleSaveFormFields}>
+                  {formUpdateSuccess && (
+                    <div style={{
+                      backgroundColor: "var(--primary-light)",
+                      color: "var(--primary)",
+                      padding: "0.75rem 1rem",
+                      borderRadius: "var(--radius-md)",
+                      marginBottom: "1.5rem",
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem"
+                    }}>
+                      <Check size={18} />
+                      <span>Form settings updated successfully!</span>
+                    </div>
+                  )}
+
+                  <div className="form-group" style={{ maxWidth: "600px", marginBottom: "2rem" }}>
+                    <label className="form-label" htmlFor="formName">Form Display Name (Title)</label>
+                    <input
+                      type="text"
+                      id="formName"
+                      className="form-input"
+                      value={editingFormName}
+                      onChange={(e) => {
+                        setEditingFormName(e.target.value);
+                        setFormUpdateSuccess(false);
+                      }}
+                      placeholder="e.g. Oasis Contact Form"
+                      required
+                    />
+                  </div>
+
+                  {/* Form fields list */}
+                  <div style={{ marginBottom: "2rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                      <h4 style={{ margin: 0 }}>Form Fields</h4>
+                      <button type="button" onClick={handleAddField} className="btn btn-secondary" style={{ padding: "0.5rem 1rem", fontSize: "0.85rem" }}>
+                        <Plus size={16} /> Add Field
+                      </button>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                      {editingFields.map((field, index) => (
+                        <div key={field.id} style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", alignItems: "flex-end", padding: "1rem", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-card)" }}>
+                          
+                          <div style={{ flex: "2", minWidth: "150px" }}>
+                            <label className="form-label" style={{ fontSize: "0.8rem" }}>Field Label</label>
+                            <input 
+                              type="text" 
+                              className="form-input" 
+                              value={field.label} 
+                              onChange={(e) => {
+                                handleFieldChange(field.id, { label: e.target.value });
+                                setFormUpdateSuccess(false);
+                              }}
+                              required
+                            />
+                          </div>
+
+                          <div style={{ flex: "1.5", minWidth: "120px" }}>
+                            <label className="form-label" style={{ fontSize: "0.8rem" }}>Type</label>
+                            <select 
+                              className="form-input" 
+                              value={field.type} 
+                              onChange={(e) => {
+                                handleFieldChange(field.id, { type: e.target.value as FormFieldType });
+                                setFormUpdateSuccess(false);
+                              }}
+                            >
+                              <option value="text">Text Input</option>
+                              <option value="email">Email Address</option>
+                              <option value="tel">Phone Number</option>
+                              <option value="number">Number</option>
+                              <option value="textarea">Text Area</option>
+                              <option value="select">Dropdown Options</option>
+                              <option value="date">Date Picker</option>
+                              <option value="checkbox">Checkbox</option>
+                            </select>
+                          </div>
+
+                          <div style={{ flex: "0.5", minWidth: "60px", alignSelf: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+                            <label className="form-label" style={{ fontSize: "0.8rem", marginBottom: "0.25rem" }}>Req.</label>
+                            <input 
+                              type="checkbox" 
+                              checked={field.required} 
+                              onChange={(e) => {
+                                handleFieldChange(field.id, { required: e.target.checked });
+                                setFormUpdateSuccess(false);
+                              }}
+                              style={{ width: "18px", height: "18px", accentColor: "var(--primary)", cursor: "pointer" }}
+                            />
+                          </div>
+
+                          {field.type === "select" && (
+                            <div style={{ flex: "100%", width: "100%", marginTop: "0.5rem" }}>
+                              <label className="form-label" style={{ fontSize: "0.8rem" }}>Dropdown Options (Comma separated list)</label>
+                              <input 
+                                type="text" 
+                                className="form-input" 
+                                value={field.options?.join(", ") || ""} 
+                                onChange={(e) => {
+                                  handleFieldChange(field.id, { options: e.target.value.split(",").map(o => o.trim()).filter(Boolean) });
+                                  setFormUpdateSuccess(false);
+                                }}
+                                placeholder="Option 1, Option 2, Option 3"
+                                required
+                              />
+                            </div>
+                          )}
+
+                          {/* Sorting controls */}
+                          <div style={{ flex: "100%", display: "flex", justifyContent: "flex-end", gap: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem", marginTop: "0.5rem" }}>
+                            <button type="button" onClick={() => { moveField(index, "up"); setFormUpdateSuccess(false); }} disabled={index === 0} className="btn btn-secondary" style={{ padding: "0.25rem 0.5rem" }}>
+                              <ArrowUp size={14} />
+                            </button>
+                            <button type="button" onClick={() => { moveField(index, "down"); setFormUpdateSuccess(false); }} disabled={index === editingFields.length - 1} className="btn btn-secondary" style={{ padding: "0.25rem 0.5rem" }}>
+                              <ArrowDown size={14} />
+                            </button>
+                            <button type="button" onClick={() => { handleRemoveField(field.id); setFormUpdateSuccess(false); }} className="btn btn-secondary" style={{ padding: "0.25rem 0.5rem", color: "var(--danger)" }}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary" style={{ padding: "0.75rem 1.5rem", minWidth: "180px" }} disabled={savingForm}>
+                    {savingForm ? <><Loader2 className="animate-spin" size={16}/> Saving...</> : "Save Form Settings"}
+                  </button>
+                </form>
               </div>
             )}
           </>

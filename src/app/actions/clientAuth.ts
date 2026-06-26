@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import crypto from "crypto";
-import { getForm, saveForm, getLeads, deleteLead } from "@/lib/formService";
+import { getForm, saveForm, getLeads, deleteLead, FormField } from "@/lib/formService";
 
 const ENCRYPTION_KEY = process.env.SESSION_SECRET || "aero-form-builder-secret-32-chars";
 const key = crypto.createHash("sha256").update(ENCRYPTION_KEY).digest();
@@ -172,6 +172,31 @@ export async function deleteClientLead(formId: string, leadId: string) {
     return { success: true };
   } catch (error: any) {
     console.error("Error deleting client lead:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateClientFormFields(formId: string, name: string, fields: FormField[]) {
+  const session = await getClientSession();
+  if (!session) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  // Authorization Check
+  if (session.formId !== formId && !session.isSuperAdmin) {
+    return { success: false, error: "Unauthorized access" };
+  }
+
+  try {
+    const form = await getForm(formId);
+    if (!form) return { success: false, error: "Form not found" };
+
+    form.name = name;
+    form.fields = fields;
+    await saveForm(form);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating client form fields:", error);
     return { success: false, error: error.message };
   }
 }
