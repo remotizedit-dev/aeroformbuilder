@@ -5,6 +5,7 @@ import path from "path";
 const isDev = process.env.NODE_ENV !== "production";
 
 const nextConfig: NextConfig = {
+  transpilePackages: ["firebase", "@firebase/firestore"],
   turbopack: {
     resolveAlias: {
       "firebase/firestore": "firebase/firestore/dist/esm/index.esm.js",
