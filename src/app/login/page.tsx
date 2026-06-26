@@ -1,29 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { loginClient, getClientSession } from "@/app/actions/clientAuth";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, Loader2 } from "lucide-react";
+import { Lock, FileKey, User, Loader2 } from "lucide-react";
 
-export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
+export default function ClientLoginPage() {
+  const [formId, setFormId] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [checkingSession, setCheckingSession] = useState(true);
   const router = useRouter();
 
-  // If already authenticated, redirect to /forms immediately
+  // If already has client session, redirect to dashboard /
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        router.push("/forms");
-      } else {
-        setCheckingAuth(false);
+    async function checkSession() {
+      try {
+        const session = await getClientSession();
+        if (session) {
+          router.push("/");
+        } else {
+          setCheckingSession(false);
+        }
+      } catch (err) {
+        setCheckingSession(false);
       }
-    });
-    return () => unsubscribe();
+    }
+    checkSession();
   }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -32,17 +37,21 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/forms");
-    } catch (err: any) {
-      setError("Invalid admin email or password. Please try again.");
+      const result = await loginClient(formId, username, password);
+      if (result.success) {
+        router.push("/");
+      } else {
+        setError(result.error || "Authentication failed.");
+      }
+    } catch (err) {
       console.error(err);
+      setError("An unexpected network error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (checkingAuth) {
+  if (checkingSession) {
     return (
       <div style={{ display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center" }}>
         <Loader2 className="animate-spin" size={32} color="var(--primary)" />
@@ -59,7 +68,7 @@ export default function AdminLoginPage() {
       background: "var(--bg-main)",
       padding: "1.5rem"
     }}>
-      <div className="card animate-fade-in" style={{ width: "100%", maxWidth: "400px", padding: "2.5rem" }}>
+      <div className="card animate-fade-in" style={{ width: "100%", maxWidth: "420px", padding: "2.5rem" }}>
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div style={{ 
             display: "inline-flex", 
@@ -68,10 +77,10 @@ export default function AdminLoginPage() {
             borderRadius: "50%",
             marginBottom: "1rem"
           }}>
-            <Lock color="var(--primary)" size={36} />
+            <FileKey color="var(--primary)" size={36} />
           </div>
           <h2 style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--text-primary)" }}>Aero Form Builder</h2>
-          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>Administrator Control Portal</p>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>Client Data Portal</p>
         </div>
 
         {error && (
@@ -82,18 +91,35 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label className="form-label">Admin Email</label>
+            <label className="form-label">Form ID (Leave blank if Super Admin)</label>
             <div style={{ position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "1rem", transform: "translateY(-50%)", color: "var(--text-secondary)" }}>
-                <Mail size={18} />
+                <FileKey size={18} />
               </div>
               <input 
-                type="email" 
+                type="text" 
                 className="form-input" 
                 style={{ paddingLeft: "2.75rem" }}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
+                value={formId}
+                onChange={(e) => setFormId(e.target.value)}
+                placeholder="e.g. contact-form"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Username</label>
+            <div style={{ position: "relative" }}>
+              <div style={{ position: "absolute", top: "50%", left: "1rem", transform: "translateY(-50%)", color: "var(--text-secondary)" }}>
+                <User size={18} />
+              </div>
+              <input 
+                type="text" 
+                className="form-input" 
+                style={{ paddingLeft: "2.75rem" }}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter client username"
                 required 
               />
             </div>
@@ -111,7 +137,7 @@ export default function AdminLoginPage() {
                 style={{ paddingLeft: "2.75rem" }}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Enter password"
                 required 
               />
             </div>
@@ -123,7 +149,7 @@ export default function AdminLoginPage() {
             style={{ width: "100%", marginTop: "1rem", fontWeight: "bold" }}
             disabled={loading}
           >
-            {loading ? <><Loader2 className="animate-spin" size={18}/> Signing in...</> : "Sign In"}
+            {loading ? <><Loader2 className="animate-spin" size={18}/> Verifying...</> : "Verify & Access"}
           </button>
         </form>
 

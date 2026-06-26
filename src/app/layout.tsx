@@ -6,9 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Medicare Clinic Memorial Drive | Medical Clinic Near Me Calgary",
-  description: "Looking for a medical clinic near me or an appointment near me in Calgary? Medicare Clinic Memorial Drive offers expert medical care, regular checkups, and prescription refills at 171 52 St SE Calgary, AB T2A 5H8.",
-  keywords: ["clinic near me", "appointment near me", "medical clinic Calgary", "Medicare Clinic Memorial Drive", "doctor Calgary", "171 52 St SE Calgary"],
+  title: "Aero Form Builder",
+  description: "Dynamic multi-tenant form builder and lead collection system developed by RemotizedIT.",
 };
 
 export default function RootLayout({

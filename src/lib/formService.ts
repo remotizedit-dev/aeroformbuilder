@@ -1,12 +1,7 @@
 import { db } from "./firebase";
-import { collection, getDocs, addDoc, doc, setDoc, getDoc, query, orderBy, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, setDoc, getDoc, query, orderBy, deleteDoc, where } from "firebase/firestore";
 
-export async function deleteLead(id: string) {
-  const docRef = doc(db, "leads", id);
-  await deleteDoc(docRef);
-}
-
-export type FormFieldType = "text" | "email" | "tel" | "textarea" | "select" | "date";
+export type FormFieldType = "text" | "email" | "tel" | "number" | "textarea" | "select" | "date" | "checkbox";
 
 export interface FormField {
   id: string;
@@ -18,51 +13,145 @@ export interface FormField {
   order: number;
 }
 
-export const DEFAULT_FIELDS: FormField[] = [
-  { id: "1", name: "fullName", label: "Full Name", type: "text", required: true, order: 1 },
-  { id: "2", name: "email", label: "Email Address", type: "email", required: true, order: 2 },
-  { id: "3", name: "phone", label: "Phone Number", type: "tel", required: true, order: 3 },
-  { id: "4", name: "preferredDate", label: "Preferred Appointment Date", type: "date", required: false, order: 4 },
-  { id: "5", name: "message", label: "Additional Information", type: "textarea", required: false, order: 5 },
-];
+export interface EmailSettings {
+  senderEmail: string;
+  senderAppPassword: string;
+  receiverEmails: string;
+}
 
-export async function getFormFields(): Promise<FormField[]> {
+export interface Form {
+  id: string; // The custom Form ID slug (e.g. "contact-form")
+  name: string;
+  clientUsername: string;
+  clientPassword: string;
+  fields: FormField[];
+  emailSettings: EmailSettings;
+  createdAt: string;
+}
+
+export async function getForms(): Promise<Form[]> {
   try {
-    const docRef = doc(db, "settings", "form");
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      return docSnap.data().fields as FormField[];
-    } else {
-      // Document doesn't exist yet, return defaults
-      return DEFAULT_FIELDS;
-    }
+    const q = query(collection(db, "forms"), orderBy("createdAt", "desc"));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as Form[];
   } catch (error) {
-    console.error("Error fetching form fields:", error);
-    return DEFAULT_FIELDS; // fallback
+    console.error("Error fetching forms:", error);
+    return [];
   }
 }
 
-export async function saveFormFields(fields: FormField[]) {
-  // Save the entire array as a single atomic document
-  const docRef = doc(db, "settings", "form");
-  await setDoc(docRef, { fields });
+export async function getForm(id: string): Promise<Form | null> {
+  try {
+    const sanitizedId = id.trim().toLowerCase();
+    const docRef = doc(db, "forms", sanitizedId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() } as Form;
+    }
+    return null;
+  } catch (error) {
+    console.error("Error fetching form:", error);
+    return null;
+  }
 }
 
-export async function submitLead(data: Record<string, any>) {
+export async function formExists(id: string): Promise<boolean> {
+  try {
+    const sanitizedId = id.trim().toLowerCase();
+    const docRef = doc(db, "forms", sanitizedId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists();
+  } catch {
+    return false;
+  }
+}
+
+export async function saveForm(form: Form): Promise<string> {
+  const sanitizedId = form.id.trim().toLowerCase();
+  const docRef = doc(db, "forms", sanitizedId);
+  const data = {
+    name: form.name,
+    clientUsername: form.clientUsername,
+    clientPassword: form.clientPassword,
+    fields: form.fields,
+    emailSettings: form.emailSettings,
+    createdAt: form.createdAt || new Date().toISOString()
+  };
+  await setDoc(docRef, data, { merge: true });
+  return sanitizedId;
+}
+
+export async function deleteForm(id: string) {
+  const sanitizedId = id.trim().toLowerCase();
+  const docRef = doc(db, "forms", sanitizedId);
+  await deleteDoc(docRef);
+  
+  // Delete all leads associated with this form
+  try {
+    const q = query(collection(db, "leads"), where("formId", "==", sanitizedId));
+    const snapshot = await getDocs(q);
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+  } catch (error) {
+    console.error("Error deleting leads associated with form:", error);
+  }
+}
+
+export async function submitLead(formId: string, data: Record<string, any>) {
+  const sanitizedId = formId.trim().toLowerCase();
   const leadsRef = collection(db, "leads");
   await addDoc(leadsRef, {
-    ...data,
+    formId: sanitizedId,
+    data,
     createdAt: new Date().toISOString(),
     status: "new"
   });
 }
 
-export async function getLeads() {
-  const q = query(collection(db, "leads"), orderBy("createdAt", "desc"));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  }));
+export async function getLeads(formId?: string) {
+  try {
+    if (formId) {
+      const sanitizedId = formId.trim().toLowerCase();
+      try {
+        const q = query(
+          collection(db, "leads"),
+          where("formId", "==", sanitizedId),
+          orderBy("createdAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+      } catch (indexError) {
+        // Fallback to client-side sort if Firestore composite index is missing
+        console.warn("Index missing, falling back to client-side sort:", indexError);
+        const qSimple = query(collection(db, "leads"), where("formId", "==", sanitizedId));
+        const snapshot = await getDocs(qSimple);
+        const mapped = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        return mapped.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+    } else {
+      const q = query(collection(db, "leads"), orderBy("createdAt", "desc"));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching leads:", error);
+    return [];
+  }
+}
+
+export async function deleteLead(id: string) {
+  const docRef = doc(db, "leads", id);
+  await deleteDoc(docRef);
 }
