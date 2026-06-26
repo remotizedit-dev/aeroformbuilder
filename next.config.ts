@@ -8,8 +8,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ["firebase", "@firebase/firestore"],
   turbopack: {
     resolveAlias: {
-      "firebase/firestore": "firebase/firestore/dist/esm/index.esm.js",
-      "@firebase/firestore": "@firebase/firestore/dist/index.esm.js",
+      "firebase/firestore": "./node_modules/firebase/firestore/dist/esm/index.esm.js",
+      "@firebase/firestore": "./node_modules/@firebase/firestore/dist/index.esm.js",
     },
   },
   webpack: (config, { isServer }) => {
