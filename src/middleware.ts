@@ -3,7 +3,11 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
-  const hostname = request.headers.get('host') || '';
+  let hostname = (request.headers.get('host') || '').toLowerCase();
+  // Strip www. prefix if present
+  if (hostname.startsWith('www.')) {
+    hostname = hostname.substring(4);
+  }
   const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
 
   // Get allowed subdomains from environment variable or use defaults

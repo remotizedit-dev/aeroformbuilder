@@ -15,7 +15,9 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
   const router = useRouter();
   const [forms] = useState<Form[]>(initialForms);
   const [selectedFormId, setSelectedFormId] = useState<string>(
-    session.isSuperAdmin && initialForms.length > 0 ? initialForms[0].id : session.formId
+    session.isSuperAdmin
+      ? (session.formId !== "all" && initialForms.some(f => f.id === session.formId) ? session.formId : (initialForms.length > 0 ? initialForms[0].id : "all"))
+      : session.formId
   );
   
   const [leads, setLeads] = useState<any[]>([]);

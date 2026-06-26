@@ -48,7 +48,7 @@ export async function loginClient(formIdInput: string, usernameInput: string, pa
   // Check Super Admin Credentials
   if (username === superAdminUser && password === superAdminPass) {
     const sessionData: ClientSession = {
-      formId: "all",
+      formId: formId || "all",
       username: superAdminUser,
       isSuperAdmin: true
     };
