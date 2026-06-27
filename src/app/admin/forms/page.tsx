@@ -23,7 +23,10 @@ export default function AdminFormsPage() {
       senderAppPassword: "",
       receiverEmails: ""
     },
-    themeColor: "#026aa2"
+    themeColor: "#026aa2",
+    bgColor: "#ffffff",
+    textColor: "#101828",
+    inputBgColor: "#ffffff"
   });
 
   // Embed Modal State
@@ -61,7 +64,10 @@ export default function AdminFormsPage() {
         senderAppPassword: "",
         receiverEmails: ""
       },
-      themeColor: "#026aa2"
+      themeColor: "#026aa2",
+      bgColor: "#ffffff",
+      textColor: "#101828",
+      inputBgColor: "#ffffff"
     });
     setIsEditMode(false);
     setIsEditing(true);
@@ -467,7 +473,7 @@ ${f.options?.map(o => `      <option value="${o}">${o}</option>`).join('\n') || 
 
             <form onSubmit={handleSaveForm}>
               {/* Form Metadata */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
                 <div className="form-group">
                   <label className="form-label">Form ID (Slug/Unique Key)</label>
                   <input 
@@ -494,31 +500,125 @@ ${f.options?.map(o => `      <option value="${o}">${o}</option>`).join('\n') || 
                     required 
                   />
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Form Theme Color</label>
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                    <input 
-                      type="color" 
-                      className="form-input" 
-                      style={{ width: "50px", height: "42px", padding: "0.25rem", cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
-                      value={editingForm.themeColor || "#026aa2"} 
-                      onChange={(e) => setEditingForm({ ...editingForm, themeColor: e.target.value })} 
-                    />
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      style={{ flex: 1, fontFamily: "monospace", textTransform: "uppercase" }}
-                      value={editingForm.themeColor || "#026aa2"} 
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (val && !val.startsWith("#")) val = "#" + val;
-                        if (val.length <= 7) {
-                          setEditingForm({ ...editingForm, themeColor: val });
-                        }
-                      }} 
-                      placeholder="#026AA2"
-                    />
+              </div>
+
+              {/* Form Style Customizer */}
+              <div style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "1.5rem", marginBottom: "1.5rem", backgroundColor: "var(--bg-main)" }}>
+                <h4 style={{ margin: "0 0 1.25rem 0", color: "var(--primary)", fontSize: "1rem" }}>Form Style Theme Customizer</h4>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.25rem" }}>
+                  
+                  {/* Theme / Button Color */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>Button & Accent Color</label>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <input 
+                        type="color" 
+                        className="form-input" 
+                        style={{ width: "50px", height: "42px", padding: "0.25rem", cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
+                        value={editingForm.themeColor || "#026aa2"} 
+                        onChange={(e) => setEditingForm({ ...editingForm, themeColor: e.target.value })} 
+                      />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ flex: 1, fontFamily: "monospace", textTransform: "uppercase", fontSize: "0.9rem" }}
+                        value={editingForm.themeColor || "#026aa2"} 
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val && !val.startsWith("#")) val = "#" + val;
+                          if (val.length <= 7) {
+                            setEditingForm({ ...editingForm, themeColor: val });
+                          }
+                        }} 
+                        placeholder="#026AA2"
+                      />
+                    </div>
                   </div>
+
+                  {/* Card Background Color */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>Card Background Color</label>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <input 
+                        type="color" 
+                        className="form-input" 
+                        style={{ width: "50px", height: "42px", padding: "0.25rem", cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
+                        value={editingForm.bgColor || "#ffffff"} 
+                        onChange={(e) => setEditingForm({ ...editingForm, bgColor: e.target.value })} 
+                      />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ flex: 1, fontFamily: "monospace", textTransform: "uppercase", fontSize: "0.9rem" }}
+                        value={editingForm.bgColor || "#ffffff"} 
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val && !val.startsWith("#")) val = "#" + val;
+                          if (val.length <= 7) {
+                            setEditingForm({ ...editingForm, bgColor: val });
+                          }
+                        }} 
+                        placeholder="#FFFFFF"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Text / Label Color */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>Text & Labels Color</label>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <input 
+                        type="color" 
+                        className="form-input" 
+                        style={{ width: "50px", height: "42px", padding: "0.25rem", cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
+                        value={editingForm.textColor || "#101828"} 
+                        onChange={(e) => setEditingForm({ ...editingForm, textColor: e.target.value })} 
+                      />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ flex: 1, fontFamily: "monospace", textTransform: "uppercase", fontSize: "0.9rem" }}
+                        value={editingForm.textColor || "#101828"} 
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val && !val.startsWith("#")) val = "#" + val;
+                          if (val.length <= 7) {
+                            setEditingForm({ ...editingForm, textColor: val });
+                          }
+                        }} 
+                        placeholder="#101828"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Input Field Color */}
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontSize: "0.85rem", fontWeight: 600 }}>Input Fields Background</label>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                      <input 
+                        type="color" 
+                        className="form-input" 
+                        style={{ width: "50px", height: "42px", padding: "0.25rem", cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
+                        value={editingForm.inputBgColor || "#ffffff"} 
+                        onChange={(e) => setEditingForm({ ...editingForm, inputBgColor: e.target.value })} 
+                      />
+                      <input 
+                        type="text" 
+                        className="form-input" 
+                        style={{ flex: 1, fontFamily: "monospace", textTransform: "uppercase", fontSize: "0.9rem" }}
+                        value={editingForm.inputBgColor || "#ffffff"} 
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (val && !val.startsWith("#")) val = "#" + val;
+                          if (val.length <= 7) {
+                            setEditingForm({ ...editingForm, inputBgColor: val });
+                          }
+                        }} 
+                        placeholder="#FFFFFF"
+                      />
+                    </div>
+                  </div>
+
                 </div>
               </div>
 

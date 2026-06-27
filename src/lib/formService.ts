@@ -27,6 +27,9 @@ export interface Form {
   fields: FormField[];
   emailSettings: EmailSettings;
   themeColor?: string;
+  bgColor?: string;
+  textColor?: string;
+  inputBgColor?: string;
   createdAt: string;
 }
 
@@ -80,6 +83,9 @@ export async function saveForm(form: Form): Promise<string> {
     fields: form.fields,
     emailSettings: form.emailSettings,
     themeColor: form.themeColor || "#026aa2",
+    bgColor: form.bgColor || "#ffffff",
+    textColor: form.textColor || "#101828",
+    inputBgColor: form.inputBgColor || "#ffffff",
     createdAt: form.createdAt || new Date().toISOString()
   };
   await setDoc(docRef, data, { merge: true });

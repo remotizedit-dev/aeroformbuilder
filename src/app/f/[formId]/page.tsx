@@ -20,6 +20,9 @@ export default async function PublicFormPage({ params }: PageProps) {
     name: form.name,
     fields: form.fields,
     themeColor: form.themeColor || "#026aa2",
+    bgColor: form.bgColor || "#ffffff",
+    textColor: form.textColor || "#101828",
+    inputBgColor: form.inputBgColor || "#ffffff",
   };
 
   return (

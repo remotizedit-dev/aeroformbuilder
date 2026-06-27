@@ -10,6 +10,9 @@ interface EmbeddedFormClientProps {
     name: string;
     fields: FormField[];
     themeColor?: string;
+    bgColor?: string;
+    textColor?: string;
+    inputBgColor?: string;
   };
 }
 
@@ -95,11 +98,24 @@ export default function EmbeddedFormClient({ form }: EmbeddedFormClientProps) {
 
   const sortedFields = [...form.fields].sort((a, b) => a.order - b.order);
 
-  const themeStyles = form.themeColor ? {
-    "--primary": form.themeColor,
-    "--border-focus": form.themeColor,
-    "--primary-light": `${form.themeColor}15`,
-  } as React.CSSProperties : {};
+  const themeStyles = {
+    ...(form.themeColor ? {
+      "--primary": form.themeColor,
+      "--border-focus": form.themeColor,
+      "--primary-light": `${form.themeColor}15`,
+    } : {}),
+    ...(form.bgColor ? {
+      "background": form.bgColor,
+      "borderColor": form.bgColor === "transparent" ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+    } : {}),
+    ...(form.textColor ? {
+      "--text-primary": form.textColor,
+      "--text-secondary": `${form.textColor}aa`,
+    } : {}),
+    ...(form.inputBgColor ? {
+      "--bg-main": form.inputBgColor,
+    } : {}),
+  } as React.CSSProperties;
 
   if (success) {
     return (
