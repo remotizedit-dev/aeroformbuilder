@@ -40,6 +40,7 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
   // Form Builder State
   const [editingFormName, setEditingFormName] = useState("");
   const [editingFields, setEditingFields] = useState<FormField[]>([]);
+  const [editingThemeColor, setEditingThemeColor] = useState("#026aa2");
   const [savingForm, setSavingForm] = useState(false);
   const [formUpdateSuccess, setFormUpdateSuccess] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -71,6 +72,7 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
       setReceiverEmails(selectedForm.emailSettings?.receiverEmails || "");
       setEditingFormName(selectedForm.name);
       setEditingFields(JSON.parse(JSON.stringify(selectedForm.fields || [])));
+      setEditingThemeColor(selectedForm.themeColor || "#026aa2");
       setFormUpdateSuccess(false);
     }
   }, [selectedFormId, selectedForm]);
@@ -186,7 +188,7 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
     setFormUpdateSuccess(false);
 
     try {
-      const res = await updateClientFormFields(selectedFormId, editingFormName, editingFields);
+      const res = await updateClientFormFields(selectedFormId, editingFormName, editingFields, editingThemeColor);
       if (res.success) {
         setFormUpdateSuccess(true);
         // Update local forms array so UI updates
@@ -194,6 +196,7 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
         if (formIndex > -1) {
           forms[formIndex].name = editingFormName;
           forms[formIndex].fields = editingFields;
+          forms[formIndex].themeColor = editingThemeColor;
         }
       } else {
         alert(res.error || "Failed to update form layout.");
@@ -674,20 +677,54 @@ ${selectedForm.fields.map(f => `  <div style="margin-bottom: 12px;">
                     </div>
                   )}
 
-                  <div className="form-group" style={{ maxWidth: "600px", marginBottom: "2rem" }}>
-                    <label className="form-label" htmlFor="formName">Form Display Name (Title)</label>
-                    <input
-                      type="text"
-                      id="formName"
-                      className="form-input"
-                      value={editingFormName}
-                      onChange={(e) => {
-                        setEditingFormName(e.target.value);
-                        setFormUpdateSuccess(false);
-                      }}
-                      placeholder="e.g. Oasis Contact Form"
-                      required
-                    />
+                  <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap", marginBottom: "2rem" }}>
+                    <div className="form-group" style={{ flex: "2", minWidth: "250px", marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="formName">Form Display Name (Title)</label>
+                      <input
+                        type="text"
+                        id="formName"
+                        className="form-input"
+                        value={editingFormName}
+                        onChange={(e) => {
+                          setEditingFormName(e.target.value);
+                          setFormUpdateSuccess(false);
+                        }}
+                        placeholder="e.g. Oasis Contact Form"
+                        required
+                      />
+                    </div>
+                    
+                    <div className="form-group" style={{ flex: "1", minWidth: "180px", marginBottom: 0 }}>
+                      <label className="form-label" htmlFor="themeColor">Form Color Theme</label>
+                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                        <input
+                          type="color"
+                          id="themeColor"
+                          className="form-input"
+                          style={{ width: "50px", height: "42px", padding: "0.25rem", cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
+                          value={editingThemeColor}
+                          onChange={(e) => {
+                            setEditingThemeColor(e.target.value);
+                            setFormUpdateSuccess(false);
+                          }}
+                        />
+                        <input
+                          type="text"
+                          className="form-input"
+                          style={{ flex: 1, fontFamily: "monospace", textTransform: "uppercase" }}
+                          value={editingThemeColor}
+                          onChange={(e) => {
+                            let val = e.target.value;
+                            if (val && !val.startsWith("#")) val = "#" + val;
+                            if (val.length <= 7) {
+                              setEditingThemeColor(val);
+                              setFormUpdateSuccess(false);
+                            }
+                          }}
+                          placeholder="#026AA2"
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   {/* Form fields list */}

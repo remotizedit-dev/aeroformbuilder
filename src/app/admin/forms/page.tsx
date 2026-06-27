@@ -22,7 +22,8 @@ export default function AdminFormsPage() {
       senderEmail: "",
       senderAppPassword: "",
       receiverEmails: ""
-    }
+    },
+    themeColor: "#026aa2"
   });
 
   // Embed Modal State
@@ -59,7 +60,8 @@ export default function AdminFormsPage() {
         senderEmail: "",
         senderAppPassword: "",
         receiverEmails: ""
-      }
+      },
+      themeColor: "#026aa2"
     });
     setIsEditMode(false);
     setIsEditing(true);
@@ -465,7 +467,7 @@ ${f.options?.map(o => `      <option value="${o}">${o}</option>`).join('\n') || 
 
             <form onSubmit={handleSaveForm}>
               {/* Form Metadata */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
                 <div className="form-group">
                   <label className="form-label">Form ID (Slug/Unique Key)</label>
                   <input 
@@ -491,6 +493,32 @@ ${f.options?.map(o => `      <option value="${o}">${o}</option>`).join('\n') || 
                     placeholder="e.g. Website Contact Form"
                     required 
                   />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Form Theme Color</label>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <input 
+                      type="color" 
+                      className="form-input" 
+                      style={{ width: "50px", height: "42px", padding: "0.25rem", cursor: "pointer", border: "1px solid var(--border)", borderRadius: "var(--radius-md)" }}
+                      value={editingForm.themeColor || "#026aa2"} 
+                      onChange={(e) => setEditingForm({ ...editingForm, themeColor: e.target.value })} 
+                    />
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      style={{ flex: 1, fontFamily: "monospace", textTransform: "uppercase" }}
+                      value={editingForm.themeColor || "#026aa2"} 
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (val && !val.startsWith("#")) val = "#" + val;
+                        if (val.length <= 7) {
+                          setEditingForm({ ...editingForm, themeColor: val });
+                        }
+                      }} 
+                      placeholder="#026AA2"
+                    />
+                  </div>
                 </div>
               </div>
 

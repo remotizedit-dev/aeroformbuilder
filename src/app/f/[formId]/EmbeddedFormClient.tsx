@@ -9,6 +9,7 @@ interface EmbeddedFormClientProps {
     id: string;
     name: string;
     fields: FormField[];
+    themeColor?: string;
   };
 }
 
@@ -94,6 +95,12 @@ export default function EmbeddedFormClient({ form }: EmbeddedFormClientProps) {
 
   const sortedFields = [...form.fields].sort((a, b) => a.order - b.order);
 
+  const themeStyles = form.themeColor ? {
+    "--primary": form.themeColor,
+    "--border-focus": form.themeColor,
+    "--primary-light": `${form.themeColor}15`,
+  } as React.CSSProperties : {};
+
   if (success) {
     return (
       <div className="glass-card" style={{
@@ -102,7 +109,8 @@ export default function EmbeddedFormClient({ form }: EmbeddedFormClientProps) {
         borderRadius: "1rem",
         width: "100%",
         maxWidth: "500px",
-        boxShadow: "var(--shadow-lg)"
+        boxShadow: "var(--shadow-lg)",
+        ...themeStyles
       }}>
         <CheckCircle color="var(--success)" size={52} style={{ margin: "0 auto 1.25rem" }} />
         <h3 style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>Thank You!</h3>
@@ -124,7 +132,8 @@ export default function EmbeddedFormClient({ form }: EmbeddedFormClientProps) {
       borderRadius: "1rem",
       width: "100%",
       maxWidth: "500px",
-      boxShadow: "var(--shadow-lg)"
+      boxShadow: "var(--shadow-lg)",
+      ...themeStyles
     }}>
       <h3 style={{ marginBottom: "0.5rem", fontSize: "1.5rem", color: "var(--primary)" }}>
         {form.name}

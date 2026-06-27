@@ -176,7 +176,7 @@ export async function deleteClientLead(formId: string, leadId: string) {
   }
 }
 
-export async function updateClientFormFields(formId: string, name: string, fields: FormField[]) {
+export async function updateClientFormFields(formId: string, name: string, fields: FormField[], themeColor?: string) {
   const session = await getClientSession();
   if (!session) {
     return { success: false, error: "Not authenticated" };
@@ -193,6 +193,9 @@ export async function updateClientFormFields(formId: string, name: string, field
 
     form.name = name;
     form.fields = fields;
+    if (themeColor) {
+      form.themeColor = themeColor;
+    }
     await saveForm(form);
     return { success: true };
   } catch (error: any) {
