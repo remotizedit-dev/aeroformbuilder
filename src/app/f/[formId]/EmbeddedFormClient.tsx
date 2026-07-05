@@ -39,7 +39,8 @@ export default function EmbeddedFormClient({ form }: EmbeddedFormClientProps) {
     document.body.style.background = "transparent";
     document.body.style.margin = "0";
     document.body.style.padding = "0";
-    document.body.style.overflow = "hidden";
+    document.body.style.overflowY = "auto";
+    document.body.style.overflowX = "hidden";
 
     const sendHeight = () => {
       const height = document.body.scrollHeight || document.documentElement.scrollHeight;

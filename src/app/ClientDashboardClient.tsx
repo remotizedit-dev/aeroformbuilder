@@ -273,7 +273,7 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
 
     switch (activeCodeTab) {
       case "iframe":
-        return `<iframe id="aero-iframe-${selectedForm.id}" src="${iframeUrl}" width="100%" height="500" frameborder="0" style="border:none; width:100%; overflow:hidden; background:transparent;"></iframe>
+        return `<iframe id="aero-iframe-${selectedForm.id}" src="${iframeUrl}" width="100%" height="700" frameborder="0" style="border:none; width:100%; background:transparent;"></iframe>
 <script>
 window.addEventListener('message', function(e) {
   if (e.data && e.data.type === 'resize-iframe' && e.data.formId === '${selectedForm.id}') {
