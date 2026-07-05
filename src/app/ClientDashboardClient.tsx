@@ -273,7 +273,17 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
 
     switch (activeCodeTab) {
       case "iframe":
-        return `<iframe src="${iframeUrl}" width="100%" height="550" frameborder="0" style="border:none; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.05); min-width:320px;"></iframe>`;
+        return `<iframe id="aero-iframe-${selectedForm.id}" src="${iframeUrl}" width="100%" height="500" frameborder="0" style="border:none; width:100%; overflow:hidden; background:transparent;"></iframe>
+<script>
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'resize-iframe' && e.data.formId === '${selectedForm.id}') {
+    const iframe = document.getElementById('aero-iframe-${selectedForm.id}');
+    if (iframe) {
+      iframe.style.height = e.data.height + 'px';
+    }
+  }
+});
+</script>`;
       case "html":
         return `<form id="embed-form-${selectedForm.id}">
   <!-- Fields -->

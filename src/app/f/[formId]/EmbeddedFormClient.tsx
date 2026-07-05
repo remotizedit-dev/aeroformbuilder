@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, CheckCircle } from "lucide-react";
 import { FormField } from "@/lib/formService";
 
@@ -33,6 +33,36 @@ export default function EmbeddedFormClient({ form }: EmbeddedFormClientProps) {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    // Reset body styles to ensure transparency and clean wrapping
+    document.body.style.background = "transparent";
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.overflow = "hidden";
+
+    const sendHeight = () => {
+      const height = document.body.scrollHeight || document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: "resize-iframe", height, formId: form.id }, "*");
+    };
+
+    // Initial measure
+    sendHeight();
+    
+    // Listen to resize events
+    window.addEventListener("resize", sendHeight);
+
+    // Watch for internal DOM height changes (dynamic fields, errors, success state)
+    const observer = new ResizeObserver(() => {
+      sendHeight();
+    });
+    observer.observe(document.body);
+
+    return () => {
+      window.removeEventListener("resize", sendHeight);
+      observer.disconnect();
+    };
+  }, [form.id, success, error, fieldErrors]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const target = e.target as HTMLInputElement;

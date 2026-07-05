@@ -27,12 +27,11 @@ export default async function PublicFormPage({ params }: PageProps) {
 
   return (
     <div style={{
-      minHeight: "100vh",
       display: "flex",
-      alignItems: "center",
+      alignItems: "flex-start",
       justifyContent: "center",
       background: "transparent",
-      padding: "1rem",
+      padding: "10px",
     }}>
       <EmbeddedFormClient form={safeForm} />
     </div>
