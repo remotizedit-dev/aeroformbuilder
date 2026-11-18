@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Form, FormField, FormFieldType } from "@/lib/formService";
 import { logoutClient, updateReceiverEmails, ClientSession, getClientLeads, deleteClientLead, updateClientFormFields } from "@/app/actions/clientAuth";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { LogOut, Download, Search, Eye, Trash2, X, Code, Copy, Mail, ShieldAlert, Check, ExternalLink, Settings, Loader2, Plus, ArrowUp, ArrowDown, Edit3 } from "lucide-react";
 
@@ -84,6 +86,11 @@ export default function ClientDashboardClient({ session, initialForms }: ClientD
   }, [selectedFormId, selectedForm]);
 
   const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      // ignore
+    }
     await logoutClient();
     router.push("/login");
   };

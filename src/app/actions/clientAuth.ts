@@ -45,7 +45,7 @@ export async function loginClient(formIdInput: string, usernameInput: string, pa
   const superAdminUser = process.env.SUPER_ADMIN_USERNAME || "superadmin";
   const superAdminPass = process.env.SUPER_ADMIN_PASSWORD || "superadmin123";
 
-  // Check Super Admin Credentials
+  // Check Super Admin Credentials (Environment variables)
   if (username === superAdminUser && password === superAdminPass) {
     const sessionData: ClientSession = {
       formId: formId || "all",
@@ -63,6 +63,55 @@ export async function loginClient(formIdInput: string, usernameInput: string, pa
     });
 
     return { success: true, isSuperAdmin: true };
+  }
+
+  // Check Firebase Authentication Admin Credentials (Email & Password)
+  const firebaseApiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (firebaseApiKey && username.includes("@")) {
+    try {
+      const res = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: username,
+            password: password,
+            returnSecureToken: true
+          })
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const sessionData: ClientSession = {
+          formId: formId || "all",
+          username: data.email || username,
+          isSuperAdmin: true
+        };
+
+        const cookieStore = await cookies();
+        cookieStore.set("client_session", encrypt(JSON.stringify(sessionData)), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 7 // 7 days
+        });
+
+        return { success: true, isSuperAdmin: true };
+      } else {
+        const errData = await res.json().catch(() => null);
+        console.warn("Firebase Auth failed for email login:", errData?.error?.message);
+        if (!formId) {
+          return { success: false, error: "Invalid admin email or password" };
+        }
+      }
+    } catch (firebaseErr) {
+      console.error("Firebase Auth verification network error:", firebaseErr);
+      if (!formId) {
+        return { success: false, error: "Unable to verify admin credentials with Firebase" };
+      }
+    }
   }
 
   // Regular Form Client Credentials Check

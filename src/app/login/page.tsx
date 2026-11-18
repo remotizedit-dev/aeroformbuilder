@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { loginClient, getClientSession } from "@/app/actions/clientAuth";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Lock, FileKey, User, Loader2 } from "lucide-react";
 
@@ -37,6 +39,15 @@ export default function ClientLoginPage() {
     setError("");
 
     try {
+      // If logging in with an email, also sign into Firebase Auth client SDK so admin tools recognize session
+      if (username.includes("@")) {
+        try {
+          await signInWithEmailAndPassword(auth, username.trim(), password);
+        } catch (firebaseErr: any) {
+          console.warn("Client Firebase sign-in notice:", firebaseErr?.message);
+        }
+      }
+
       const result = await loginClient(formId, username, password);
       if (result.success) {
         router.push("/");
@@ -91,7 +102,7 @@ export default function ClientLoginPage() {
 
         <form onSubmit={handleLogin}>
           <div className="form-group">
-            <label className="form-label">Form ID (Leave blank if Super Admin)</label>
+            <label className="form-label">Form ID (Leave blank if Admin)</label>
             <div style={{ position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "1rem", transform: "translateY(-50%)", color: "var(--text-secondary)" }}>
                 <FileKey size={18} />
@@ -102,13 +113,13 @@ export default function ClientLoginPage() {
                 style={{ paddingLeft: "2.75rem" }}
                 value={formId}
                 onChange={(e) => setFormId(e.target.value)}
-                placeholder="e.g. contact-form"
+                placeholder="e.g. contact-form (optional for admin)"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label">Username</label>
+            <label className="form-label">Username or Admin Email</label>
             <div style={{ position: "relative" }}>
               <div style={{ position: "absolute", top: "50%", left: "1rem", transform: "translateY(-50%)", color: "var(--text-secondary)" }}>
                 <User size={18} />
@@ -119,7 +130,7 @@ export default function ClientLoginPage() {
                 style={{ paddingLeft: "2.75rem" }}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter client username"
+                placeholder="Client username or admin email"
                 required 
               />
             </div>
